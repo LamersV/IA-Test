@@ -120,7 +120,7 @@ class IA {
 }
 
 class IA2 {
-    constructor(key = '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') {
+    constructor(key = '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') {
         this.openai = new OpenAI({ apiKey: key });
 
         this.headers = {
@@ -148,8 +148,8 @@ class IA2 {
     async createAssistant(file) {
         const assistants = await this.openai.beta.assistants.create({
             instructions: prompt2,
-            model: "gpt-4-1106-preview",
             // model: "gpt-4-1106-preview",
+            model: "gpt-3.5-turbo-16k",
             tools: [
                 { "type": "retrieval" }
             ],

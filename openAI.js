@@ -120,7 +120,7 @@ class IA {
 }
 
 class IA2 {
-    constructor(key = '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') {
+    constructor(key = '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') {
         this.openai = new OpenAI({ apiKey: key });
 
         this.headers = {
@@ -148,8 +148,8 @@ class IA2 {
     async createAssistant(file) {
         const assistants = await this.openai.beta.assistants.create({
             instructions: prompt2,
-            // model: "gpt-4-1106-preview",
-            model: "gpt-3.5-turbo-16k",
+            model: "gpt-4-1106-preview",
+            // model: "gpt-3.5-turbo-16k",
             tools: [
                 { "type": "retrieval" }
             ],
@@ -270,16 +270,16 @@ export const main = async () => {
     fs.writeFileSync(`./${folderName}/file.json`, JSON.stringify(file));
     const assistant = await ia.createAssistant(file);
     fs.writeFileSync(`./${folderName}/assistant.json`, JSON.stringify(assistant));
-    const thread = await ia.createThread(assistant, file);
-    fs.writeFileSync(`./${folderName}/thread.json`, JSON.stringify(thread));
-    const run = await ia.createRun(thread, assistant);
-    fs.writeFileSync(`./${folderName}/run.json`, JSON.stringify(run));
-    const response = await ia.getMessages(thread, run);
-    fs.writeFileSync(`./${folderName}/response.json`, JSON.stringify(response));
+    // const thread = await ia.createThread(assistant, file);
+    // fs.writeFileSync(`./${folderName}/thread.json`, JSON.stringify(thread));
+    // const run = await ia.createRun(thread, assistant);
+    // fs.writeFileSync(`./${folderName}/run.json`, JSON.stringify(run));
+    // const response = await ia.getMessages(thread, run);
+    // fs.writeFileSync(`./${folderName}/response.json`, JSON.stringify(response));
 
-    await new Promise(resolve => setTimeout(resolve, 120000));
+    // await new Promise(resolve => setTimeout(resolve, 120000));
 
-    await getMessages(thread, run);
+    // await getMessages(thread, run);
 
     // await ia.deleteFile(file, assistant);
     // await ia.deleteAssistant(assistant);

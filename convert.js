@@ -1,6 +1,6 @@
-import pdfparse from 'pdf-parse';
 import fs from 'fs';
 import * as PDFLIB from 'pdfjs-dist';
+import { identifyParagraphs } from './format.js';
 
 const convertPdfToText = async (path) => {
     const pdfDoc = await PDFLIB.getDocument(path).promise;
@@ -13,15 +13,14 @@ const convertPdfToText = async (path) => {
         let pageText = '';
 
         const content = await page.getTextContent();
-
+        
         for (const item of content.items) {
             item.str = item.str.normalize().replace(/[\u0300-\u036f]/g, '');
             pageText += item.str + ' ';
         }
 
-        pageText = pageText.replace(/\s\s+/g, ' ').normalize().trim();
-
-        text += pageText + '\n';
+        pageText = identifyParagraphs(pageText).replace(/\s\s+/g, ' ').normalize().trim();
+        if (pageText.length > 0) text += pageText + '\n';
     }
 
     fs.writeFileSync(path.replace('.pdf', 'raw.txt'), text);
@@ -33,7 +32,7 @@ const convertPdfToText = async (path) => {
     fs.writeFileSync(path.replace('.pdf', '.txt'), text);
 }
 
-convertPdfToText('./decon.pdf');
+convertPdfToText('./editais/decon.pdf');
 
 const removeDuplicatesFromStart = (text) => {
     const pages = text.split('\n');
@@ -89,62 +88,6 @@ const removeDuplicatesFromEnd = (text) => {
             currentSection = currentSection.split(' ').slice(0, -1).join(' ').trim();
         }
     } 
-
-    return pages.join('\n');
-}
-
-//! OBSOLETE
-const convertPdfToTextOld = async (path) => {
-    const dataBuffer = fs.readFileSync(path);
-    let pdf = await pdfparse(dataBuffer);
-
-    pdf = pdf.text.replace(/\s\s+/g, ' ');
-
-    fs.writeFileSync(path.replace('.pdf', '.txt'), pdf);
-}
-
-const removeDuplicatesFromStartOld = (text) => {
-    const pages = text.split('\n');
-
-    let currentSection = '';
-
-    for (let i = 0; i < pages.length; i++) {
-        currentSection = pages[i];
-
-        while (currentSection.length > 20) {
-            for (let j = 0; j < pages.length; j++) {
-                if (i === j) continue;
-                const match = pages[j].startsWith(currentSection);
-    
-                if (match) pages[j] = pages[j].replace(currentSection, '').trim();
-                // else currentSection = currentSection.slice(0, -1).trim();
-                else currentSection = currentSection.split(' ').slice(0, -1).join(' ').trim();
-            }
-        }
-    }
-
-    return pages.join('\n');
-}
-
-const removeDuplicatesFromEndOld = (text) => {
-    const pages = text.split('\n');
-
-    let currentSection = '';
-
-    for (let i = 0; i < pages.length; i++) {
-        currentSection = pages[i];
-
-        while (currentSection.length > 20) {
-            for (let j = 0; j < pages.length; j++) {
-                if (i === j) continue;
-                const match = pages[j].endsWith(currentSection);
-    
-                if (match) pages[j] = pages[j].replace(currentSection, '').trim();
-                // else currentSection = currentSection.slice(0, -1).trim();
-                else currentSection = currentSection.split(' ').slice(0, -1).join(' ').trim();
-            }
-        }
-    }
 
     return pages.join('\n');
 }

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import * as PDFLIB from 'pdfjs-dist';
-import { identifyParagraphs } from './format.js';
+import { identifyParagraphs, identifyScopeAndClient } from './format.js';
 
 const convertPdfToText = async (path) => {
     const defaultPath = './editais';
@@ -26,8 +26,12 @@ const convertPdfToText = async (path) => {
             pageText += item.str + ' ';
         }
 
-        pageText = identifyParagraphs(pageText).replace(/\s\s+/g, ' ').normalize().trim();
-        if (pageText.length > 0) text += pageText + '\n';
+        pageText = pageText.replace(/\s\s+/g, ' ').normalize().trim();
+
+        const clients = identifyScopeAndClient(pageText);
+        if (clients.length <= 0) continue;
+
+        text += pageText + '\n';
     }
 
     //* remove duplicate sections
@@ -42,7 +46,7 @@ const convertPdfToText = async (path) => {
     console.log(`File saved at '${fileName}' with '${text.length}' characters`);
 }
 
-convertPdfToText('decon.pdf');
+convertPdfToText('tjrr_edital.pdf');
 
 const removeDuplicatesFromStart = (text) => {
     const pages = text.split('\n');

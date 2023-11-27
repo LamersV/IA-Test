@@ -78,18 +78,73 @@ const itemsList = [
             'Lousas Inteligentes',
             'Lousa Panorâmica Lousa Interativa'
         ]
+    },
+    {
+        title: 'Totem',
+        items: [
+            'Totem Autoatendimento',
+            'Totem Auto Atendimento',
+            'Totem Auto-Atendimento',
+            'Totem Emissor Senha',
+            'Totem',
+            'Totens',
+            'Totem Autoatendimento',
+            'Totem Touchscreen',
+            'Terminal Autoatendimento',
+            'Terminal Autoatendimento',
+            'Terminal Auto-atendimento',
+            'Sistema Gestão Filas',
+            'Terminais Autoatendimento',
+            'Conjunto Auto Atendimento',
+            'Totem Tela Touch',
+            'Terminal Auto Atendimento',
+            'Totens Autoatendimento',
+            'Totem Interativo',
+            'Sistema Atendimento',
+            'Kit Equipamentos Autoatendimento',
+            'Terminal Dispensador Senha',
+            'Kit Autoatendimento',
+            'Terminal Auto Atendimento',
+            'Totem Autoatendimento',
+            'Totens Interativos',
+            'Totem Atendimento',
+            'Unidade Móvel Atendimento',
+            'Totem Dispensar Senha',
+            'Totem Gerenciador',
+            'Totem Tela Interativa',
+            'Totem Digital',
+            'Totem Multimidia',
+            'Estação Auto Atendimento',
+            'Toten Touch Screen',
+            'Toten Autoatendimento',
+            'Totem Gerador Senhas',
+            'Totem Distribuição Senhas',
+            'Totens Senha',
+            'Totem Virtual',
+            'Terminais Atendimento',
+            'Terminais Interativos',
+            'Totens Pesquisa',
+            'Emissor Senhas Totem',
+            'Totens Digitais',
+            'Autoatendimento',
+            'Totem Touch Screen',
+            'Emissor Senhas',
+            'Totens Multimídia',
+            'Totem Multimídia',
+            'Sistema Gerenciamento Filas',
+            'Totens Autoatendimento Multimídia'
+        ]
     }
 ]
 
 export const identifyParagraphs = (text) => {
-
     for (const item of itemsList) {
         for (const item2 of item.items) {
             const regex = new RegExp(item2, 'gi');
             const matches = text.match(regex);
             if (matches) return text;
             else {
-                const splitteds = item2.split(' ');
+                const splitteds = [...new Set(item2.split(' '))];
                 for (const splitted of splitteds) {
                     const regex = new RegExp(splitted, 'gi');
                     const matches = text.match(regex);

@@ -3,7 +3,14 @@ import * as PDFLIB from 'pdfjs-dist';
 import { identifyParagraphs } from './format.js';
 
 const convertPdfToText = async (path) => {
-    const pdfDoc = await PDFLIB.getDocument(path).promise;
+    const defaultPath = './editais';
+    const exist = fs.existsSync(`${defaultPath}/${path}`);
+    if (!exist) {
+        console.log(`File '${path}' not found`);
+        return;
+    }
+
+    const pdfDoc = await PDFLIB.getDocument(`${defaultPath}/${path}`).promise;
     const numPages = pdfDoc.numPages;
 
     let text = '';
@@ -23,16 +30,19 @@ const convertPdfToText = async (path) => {
         if (pageText.length > 0) text += pageText + '\n';
     }
 
-    fs.writeFileSync(path.replace('.pdf', 'raw.txt'), text);
-
     //* remove duplicate sections
     text = removeDuplicatesFromStart(text);
     text = removeDuplicatesFromEnd(text);
 
-    fs.writeFileSync(path.replace('.pdf', '.txt'), text);
+    if (!fs.existsSync(`${defaultPath}/clean`)) fs.mkdirSync(`${defaultPath}/clean`);
+
+    const fileName = `${defaultPath}/clean/${path.replace('.pdf', '.txt')}`;
+    fs.writeFileSync(fileName, text);
+    
+    console.log(`File saved at '${fileName}' with '${text.length}' characters`);
 }
 
-convertPdfToText('./editais/decon.pdf');
+convertPdfToText('decon.pdf');
 
 const removeDuplicatesFromStart = (text) => {
     const pages = text.split('\n');
@@ -78,14 +88,14 @@ const removeDuplicatesFromEnd = (text) => {
                 const match = pages[j].endsWith(currentSection);
                 if (match) matches++;
             }
-            if (matches > 10) {
+            if (matches > 15) {
                 done = true;
                 for (let j = 0; j < pages.length; j++) {
                     const match = pages[j].endsWith(currentSection);
                     if (match) pages[j] = pages[j].replace(currentSection, '').trim();
                 }
             }
-            currentSection = currentSection.split(' ').slice(0, -1).join(' ').trim();
+            currentSection = currentSection.split(' ').slice(1).join(' ').trim();
         }
     } 
 

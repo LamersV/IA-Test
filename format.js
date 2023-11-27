@@ -69,7 +69,6 @@ const splitItems = (list) => {
     return [...new Set(newList)];
 }
 
-
 export const identifyParagraphs = (text) => {
     for (const item of itemsList) {
         for (const item2 of item.items) {

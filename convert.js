@@ -1,17 +1,8 @@
 import pdfparse from 'pdf-parse';
 import fs from 'fs';
-import * as PDFLIB from 'pdfjs-dist'
+import * as PDFLIB from 'pdfjs-dist';
 
 const convertPdfToText = async (path) => {
-    const dataBuffer = fs.readFileSync(path);
-    let pdf = await pdfparse(dataBuffer);
-
-    pdf = pdf.text.replace(/\s\s+/g, ' ');
-
-    fs.writeFileSync(path.replace('.pdf', '.txt'), pdf);
-}
-
-const convertPdfToTextV2 = async (path) => {
     const pdfDoc = await PDFLIB.getDocument(path).promise;
     const numPages = pdfDoc.numPages;
 
@@ -35,39 +26,84 @@ const convertPdfToTextV2 = async (path) => {
 
     fs.writeFileSync(path.replace('.pdf', 'raw.txt'), text);
 
-    // remove duplicate sections
-    console.log(text.length);
+    //* remove duplicate sections
     text = removeDuplicatesFromStart(text);
-    console.log(text.length);
+    text = removeDuplicatesFromEnd(text);
 
     fs.writeFileSync(path.replace('.pdf', '.txt'), text);
 }
 
-convertPdfToTextV2('./editalM.pdf');
-
-//função para remover palavras que se repetem pelo menos 10 vezes
-const removeDuplicateSections = (text) => {
-    console.time('removeDuplicateSections');
-    const words = text.split(' ');
-    const wordsCount = {};
-
-    words.forEach(word => {
-        if (!wordsCount[word]) wordsCount[word] = 0;
-        wordsCount[word]++;
-    });
-
-    const newWords = [];
-
-    words.forEach(word => {
-        if (wordsCount[word] < 30) newWords.push(word);
-        else console.log(word);
-    });
-
-    console.timeEnd('removeDuplicateSections');
-    return newWords.join('\n');
-}
+convertPdfToText('./decon.pdf');
 
 const removeDuplicatesFromStart = (text) => {
+    const pages = text.split('\n');
+
+    let currentSection = '';
+
+    for (let i = 0; i < pages.length; i++) {
+        currentSection = pages[i];
+        let done = false;
+
+        while (currentSection.length > 20 && !done) {
+            let matches = 0;
+            for (let j = 0; j < pages.length; j++) {
+                const match = pages[j].startsWith(currentSection);
+                if (match) matches++;
+            }
+            if (matches > 15) {
+                done = true;
+                for (let j = 0; j < pages.length; j++) {
+                    const match = pages[j].startsWith(currentSection);
+                    if (match) pages[j] = pages[j].replace(currentSection, '').trim();
+                }
+            }
+            currentSection = currentSection.split(' ').slice(0, -1).join(' ').trim();
+        }
+    } 
+
+    return pages.join('\n');
+}
+
+const removeDuplicatesFromEnd = (text) => {
+    const pages = text.split('\n');
+
+    let currentSection = '';
+
+    for (let i = 0; i < pages.length; i++) {
+        currentSection = pages[i];
+        let done = false;
+
+        while (currentSection.length > 20 && !done) {
+            let matches = 0;
+            for (let j = 0; j < pages.length; j++) {
+                const match = pages[j].endsWith(currentSection);
+                if (match) matches++;
+            }
+            if (matches > 10) {
+                done = true;
+                for (let j = 0; j < pages.length; j++) {
+                    const match = pages[j].endsWith(currentSection);
+                    if (match) pages[j] = pages[j].replace(currentSection, '').trim();
+                }
+            }
+            currentSection = currentSection.split(' ').slice(0, -1).join(' ').trim();
+        }
+    } 
+
+    return pages.join('\n');
+}
+
+//! OBSOLETE
+const convertPdfToTextOld = async (path) => {
+    const dataBuffer = fs.readFileSync(path);
+    let pdf = await pdfparse(dataBuffer);
+
+    pdf = pdf.text.replace(/\s\s+/g, ' ');
+
+    fs.writeFileSync(path.replace('.pdf', '.txt'), pdf);
+}
+
+const removeDuplicatesFromStartOld = (text) => {
     const pages = text.split('\n');
 
     let currentSection = '';
@@ -87,6 +123,28 @@ const removeDuplicatesFromStart = (text) => {
         }
     }
 
+    return pages.join('\n');
+}
+
+const removeDuplicatesFromEndOld = (text) => {
+    const pages = text.split('\n');
+
+    let currentSection = '';
+
+    for (let i = 0; i < pages.length; i++) {
+        currentSection = pages[i];
+
+        while (currentSection.length > 20) {
+            for (let j = 0; j < pages.length; j++) {
+                if (i === j) continue;
+                const match = pages[j].endsWith(currentSection);
+    
+                if (match) pages[j] = pages[j].replace(currentSection, '').trim();
+                // else currentSection = currentSection.slice(0, -1).trim();
+                else currentSection = currentSection.split(' ').slice(0, -1).join(' ').trim();
+            }
+        }
+    }
 
     return pages.join('\n');
 }

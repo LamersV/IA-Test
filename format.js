@@ -53,8 +53,6 @@ export const identifyScopeAndClient = (text) => {
         }
     }
 
-    console.log(clients);
-
     return clients;
 }
 

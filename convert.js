@@ -1,6 +1,6 @@
 import fs from 'fs';
 import * as PDFLIB from 'pdfjs-dist';
-import { identifyParagraphs, identifyScopeAndClient } from './format.js';
+import { getTags } from './format.js';
 
 const convertPdfToText = async (path) => {
     const defaultPath = './editais';
@@ -10,48 +10,47 @@ const convertPdfToText = async (path) => {
         return;
     }
 
-    const pdfDoc = await PDFLIB.getDocument(`${defaultPath}/${path}`).promise;
+    const pdfDoc = await PDFLIB.getDocument({ url: `${defaultPath}/${path}`, verbosity: 0 }).promise;
     const numPages = pdfDoc.numPages;
 
-    //get fonts
-    let text = '';
+    let rawText = '';
 
-    for (let i = 1; i <= 1; i++) {
+    const sections = [];
+
+    for (let i = 1; i <= numPages; i++) {
         const page = await pdfDoc.getPage(i);
-        let pageText = '';
 
         const content = await page.getTextContent();
 
         for (const item of content.items) {
-            item.str = item.str.normalize().replace(/[\u0300-\u036f]/g, '');
-            pageText += item.str + ' ';
-
-            identifySections(content)
+            rawText += item.str;
         }
 
-        pageText = pageText.replace(/\s\s+/g, ' ').normalize().trim();
-
-        const clients = identifyScopeAndClient(pageText);
-        if (clients.length <= 0) continue;
-
-        text += pageText + '\n';
+        sections.push(...identifySections(content));
     }
-    const tags = findTags(text);
-    console.log('TAGS', tags);
 
-    //* remove duplicate sections
-    text = removeDuplicatesFromStart(text);
-    text = removeDuplicatesFromEnd(text);
+    const clearedSections = verifyQuantity(sections);
+    const text = clearedSections.map(item => item.items).join('\n');
 
     if (!fs.existsSync(`${defaultPath}/clean`)) fs.mkdirSync(`${defaultPath}/clean`);
 
     const fileName = `${defaultPath}/clean/${path.replace('.pdf', '.txt')}`;
     fs.writeFileSync(fileName, text);
+
+    //get percentage
+    const percentage = Math.round((text.length / rawText.length) * 100);
     
-    console.log(`File saved at '${fileName}' with '${text.length}' characters`);
+    console.log(`File saved at '${fileName}' with '${text.length}' (from '${rawText.length}') characters [${percentage}%]]`);
 }
 
 convertPdfToText('ED1.pdf');
+convertPdfToText('ED2.pdf');
+convertPdfToText('ED3.pdf');
+convertPdfToText('ED5.pdf');
+convertPdfToText('ED6.pdf');
+convertPdfToText('decon.pdf');
+convertPdfToText('editalM.pdf');
+convertPdfToText('tjrr_edital.pdf');
 
 const identifySections = (content) => {
     const sizes = content.items.map(item => item.height);
@@ -61,10 +60,8 @@ const identifySections = (content) => {
         if (item.height == 0) continue;
 
         // if only number
-        if (!isNaN(item.str)) continue;
+        // if (!isNaN(item.str)) continue;
         
-
-        //verify if include some character like a,b,c,...,A,B,C,...,1,2,3,..., ,.,;,,
         const regex = new RegExp('[a-zA-Z0-9 ,.;:]', 'gi');
         const matches = item.str.match(regex);
         if (!matches) continue;
@@ -81,29 +78,37 @@ const identifySections = (content) => {
             lastSection.items.push(item.str);
             continue;
         }
-
-        if (item.height > size) {
-            sections.push({ items: [item.str], size: item.height });
-            continue;
-        }
-
-        if (item.height < size) {
-            const lastItem = lastSection.items[lastSection.items.length - 1];
-            if (item.height < lastItem.height) {
-                lastSection.items.push(item.str);
-                continue;
-            } else {
-                sections.push({ items: [item.str], size: item.height });
-                continue;
-            }
-        }
+        sections.push({ items: [item.str], size: item.height });
     }
 
     for (const section of sections) {
         section.items = section.items.join(' ');
     }
 
-    console.log(sections);
+    return sections;
+}
+
+const verifyQuantity = (sections) => {
+    const data = [];
+
+    for (const section of sections) {
+        // count how many times the section appears
+        const count = sections.filter(item => item.items === section.items).length;
+        if (count > 5) continue;
+
+        // regex that matches the word 'item' or 'itens' or 'objeto'
+        const regex = /item|iten|bem|ben|serviço|servico|material/gi;
+        const hasItemOrObject = section.items.match(regex);
+        if (!hasItemOrObject) continue;
+
+        // find tags
+        const tags = findTags(section.items);
+        if (tags <= 0) continue;
+
+        data.push(section);
+    }
+
+    return data;
 }
 
 const findTags = (text) => {
@@ -112,12 +117,22 @@ const findTags = (text) => {
     const tagsFound = [];
 
     for (const tag of tags) {
-        const regex = new RegExp(tag, 'gi');
+        const regex = new RegExp(` ${tag} `, 'gi');
         const matches = text.match(regex);
         if (matches) tagsFound.push(tag);
     }
 
-    return tagsFound;
+    const defTagsFound = [];
+    const defTags = getTags();
+
+    for (const tag of defTags) {
+        const regex = new RegExp(` ${tag} `, 'gi');
+        const matches = text.match(regex);
+        if (matches) defTagsFound.push(tag);
+    }
+
+    if (defTagsFound.length > 0 || tagsFound.length > 0) return true;
+    return false;
 }
 
 const removeDuplicatesFromStart = (text) => {

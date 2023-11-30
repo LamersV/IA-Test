@@ -56,11 +56,30 @@ export const identifyScopeAndClient = (text) => {
     return clients;
 }
 
-const splitItems = (list) => {
+export const getTags = (text) => {
+    const data = JSON.parse(JSON.stringify(raw));
+    
+    let tags = [];
+
+    for (const client of data) {
+        for (const scope of client.scopes) {
+            const tempItems = splitItems(scope.items);
+
+            tags.push(...tempItems);
+        }
+    }
+
+    tags = [...new Set(tags)];
+
+    return tags;
+}
+
+export const splitItems = (list) => {
     const newList = [];
     for (const item of list) {
-        const splitteds = item.split(' ');
+        const splitteds = item.replace(/\s\s+/g, ' ').split(' ');
         for (const splitted of splitteds) {
+            if (splitted.length < 3) continue;
             if (!ignoreList.includes(splitted)) newList.push(splitted);
         }
     }
